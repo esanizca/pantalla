@@ -1,0 +1,111 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=384, height=704">
+<title>Temps Igualada</title>
+<style>
+html, body { margin: 0; width: 384px; height: 704px; overflow: hidden; background: #000; }
+body { position: relative; font-family: Arial, Helvetica, sans-serif; color: #fff; text-align: center; }
+.marco { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding-top: 24px; box-sizing: border-box; }
+.ciudad { font-size: 40px; font-weight: 900; letter-spacing: 4px; }
+.fecha { font-size: 20px; color: #e0a46a; margin-top: 6px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.icono { width: 150px; height: 150px; margin-top: 12px; }
+.temp { font-size: 120px; font-weight: 900; line-height: 1; margin-top: 0; }
+.temp sup { font-size: 50px; vertical-align: top; position: relative; top: 12px; }
+.estado { font-size: 28px; font-weight: 700; margin-top: 6px; }
+.maxmin { font-size: 26px; margin-top: 12px; font-weight: 700; }
+.maxmin .max { color: #ff8a5c; } .maxmin .min { color: #6cc4ff; }
+.extra { font-size: 20px; color: #bbb; margin-top: 10px; }
+.dias { display: flex; width: 344px; justify-content: space-between; margin-top: 18px; border-top: 2px solid #333; padding-top: 12px; }
+.dia { width: 110px; }
+.dia .n { font-size: 20px; font-weight: 900; color: #e0a46a; text-transform: uppercase; }
+.dia svg { width: 64px; height: 64px; margin: 4px 0; }
+.dia .t { font-size: 20px; font-weight: 700; }
+.marca { margin-top: auto; padding: 10px 0 14px; width: 100%; font-size: 16px; letter-spacing: 4px; color: #888; font-weight: 700; }
+.cargando { font-size: 26px; margin-top: 260px; color: #888; }
+</style>
+</head>
+<body>
+<div class="marco" id="app"><div class="cargando">Carregant el temps…</div><div class="marca">LASERCLINICS · IGUALADA</div>
+</div>
+<script>
+var URL_TIEMPO = "https://api.open-meteo.com/v1/forecast?latitude=41.5791&longitude=1.6172" +
+"&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m,is_day" +
+"&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Europe%2FMadrid&forecast_days=4";
+var REFRESCO_MS = 10 * 60 * 1000;
+var DIAS = ["Dg", "Dl", "Dt", "Dc", "Dj", "Dv", "Ds"];
+var DIAS_LARGOS = ["Diumenge", "Dilluns", "Dimarts", "Dimecres", "Dijous", "Divendres", "Dissabte"];
+var MESOS = ["gener", "febrer", "març", "abril", "maig", "juny", "juliol", "agost", "setembre", "octubre", "novembre", "desembre"];
+function estado(c) {
+if (c === 0) return ["Cel serè", "sol"];
+if (c === 1 || c === 2) return ["Parcialment ennuvolat", "solnube"];
+if (c === 3) return ["Ennuvolat", "nube"];
+if (c === 45 || c === 48) return ["Boira", "niebla"];
+if (c >= 51 && c <= 57) return ["Plugim", "lluvia"];
+if ((c >= 61 && c <= 67) || (c >= 80 && c <= 82)) return ["Pluja", "lluvia"];
+if ((c >= 71 && c <= 77) || c === 85 || c === 86) return ["Neu", "nieve"];
+if (c >= 95) return ["Tempesta", "tormenta"];
+return ["", "nube"];
+}
+var NUBE = '<path d="M30 70 a16 16 0 0 1 2-32 a22 22 0 0 1 42-6 a17 17 0 0 1 4 34 z" fill="#e6e6e6"/>';
+function icono(tipo, dia) {
+var astro = dia === false
+? '<path d="M58 14 a24 24 0 1 0 26 30 a20 20 0 0 1 -26 -30 z" fill="#ffe08a"/>'
+: '<circle cx="50" cy="40" r="18" fill="#ffc531"/><g stroke="#ffc531" stroke-width="5" stroke-linecap="round">' +
+'<line x1="50" y1="8" x2="50" y2="15"/><line x1="50" y1="65" x2="50" y2="72"/><line x1="18" y1="40" x2="25" y2="40"/>' +
+'<line x1="75" y1="40" x2="82" y2="40"/><line x1="27" y1="17" x2="32" y2="22"/><line x1="68" y1="58" x2="73" y2="63"/>' +
+'<line x1="73" y1="17" x2="68" y2="22"/><line x1="32" y1="58" x2="27" y2="63"/></g>';
+var c = "";
+if (tipo === "sol") c = astro;
+else if (tipo === "solnube") c = '<g transform="translate(14,-6) scale(.8)">' + astro + '</g>' + NUBE;
+else if (tipo === "nube") c = NUBE;
+else if (tipo === "niebla") c = NUBE + '<g stroke="#aaa" stroke-width="5" stroke-linecap="round"><line x1="22" y1="80" x2="78" y2="80"/><line x1="30" y1="90" x2="70" y2="90"/></g>';
+else if (tipo === "lluvia") c = NUBE + '<g stroke="#5ab8ff" stroke-width="5" stroke-linecap="round"><line x1="38" y1="78" x2="34" y2="90"/><line x1="52" y1="78" x2="48" y2="90"/><line x1="66" y1="78" x2="62" y2="90"/></g>';
+else if (tipo === "nieve") c = NUBE + '<g fill="#fff"><circle cx="36" cy="84" r="4"/><circle cx="52" cy="90" r="4"/><circle cx="66" cy="82" r="4"/></g>';
+else if (tipo === "tormenta") c = NUBE + '<path d="M54 68 l-12 18 h10 l-6 14 l18 -22 h-10 l6 -10 z" fill="#ffd12e"/>';
+return '<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">' + c + '</svg>';
+}
+function pintar(d) {
+var ahora = new Date();
+var e = estado(d.current.weather_code);
+var html =
+'<div class="ciudad">IGUALADA</div>' +
+'<div class="fecha">' + DIAS_LARGOS[ahora.getDay()] + ', ' + ahora.getDate() + ' ' + MESOS[ahora.getMonth()] + '</div>' +
+'<div class="icono">' + icono(e[1], d.current.is_day === 1) + '</div>' +
+'<div class="temp">' + Math.round(d.current.temperature_2m) + '<sup>°C</sup></div>' +
+'<div class="estado">' + e[0] + '</div>' +
+'<div class="maxmin"><span class="max">▲ ' + Math.round(d.daily.temperature_2m_max[0]) + '°</span> &nbsp; ' +
+'<span class="min">▼ ' + Math.round(d.daily.temperature_2m_min[0]) + '°</span></div>' +
+'<div class="extra">Vent ' + Math.round(d.current.wind_speed_10m) + ' km/h · Humitat ' + d.current.relative_humidity_2m + '%</div>' +
+'<div class="dias">';
+for (var i = 1; i <= 3; i++) {
+var f = new Date(d.daily.time[i] + "T12:00:00");
+html += '<div class="dia"><div class="n">' + DIAS[f.getDay()] + '</div>' +
+icono(estado(d.daily.weather_code[i])[1], true) +
+'<div class="t">' + Math.round(d.daily.temperature_2m_max[i]) + '° / ' + Math.round(d.daily.temperature_2m_min[i]) + '°</div></div>';
+}
+html += '</div><div class="marca">LASERCLINICS · IGUALADA</div>';
+document.getElementById("app").innerHTML = html;
+}
+function cargar() {
+var x = new XMLHttpRequest();
+x.open("GET", URL_TIEMPO);
+x.timeout = 15000;
+x.onload = function () {
+if (x.status !== 200) return usarGuardado();
+try { localStorage.setItem("tiempo", x.responseText); } catch (err) {}
+pintar(JSON.parse(x.responseText));
+};
+x.onerror = x.ontimeout = usarGuardado;
+x.send();
+}
+function usarGuardado() {
+try { var g = localStorage.getItem("tiempo"); if (g) pintar(JSON.parse(g)); } catch (err) {}
+}
+usarGuardado();
+cargar();
+setInterval(cargar, REFRESCO_MS);
+</script>
+</body>
+</html>
