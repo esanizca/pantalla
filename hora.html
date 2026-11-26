@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="ca">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=384, height=704">
+<title>Hora Igualada</title>
+<style>
+html, body { margin: 0; width: 384px; height: 704px; overflow: hidden; background: #000; }
+body { position: relative; font-family: Arial, Helvetica, sans-serif; color: #fff; text-align: center; }
+.marco { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; padding-top: 24px; box-sizing: border-box; }
+.ciudad { font-size: 40px; font-weight: 900; letter-spacing: 4px; }
+.rotulo { font-size: 20px; color: #e0a46a; margin-top: 6px; font-weight: 700; letter-spacing: 3px; }
+.reloj { margin-top: 40px; width: 230px; height: 230px; }
+.hora { font-size: 112px; font-weight: 900; line-height: 1; margin-top: 30px; letter-spacing: -2px; font-variant-numeric: tabular-nums; }
+.hora .dp { color: #e0a46a; position: relative; top: -8px; }
+.seg { font-size: 30px; font-weight: 700; color: #888; margin-top: 4px; font-variant-numeric: tabular-nums; }
+.dia { font-size: 34px; font-weight: 900; margin-top: 26px; text-transform: uppercase; letter-spacing: 2px; }
+.fecha { font-size: 26px; font-weight: 700; color: #e0a46a; margin-top: 6px; }
+.marca { margin-top: auto; padding: 10px 0 14px; width: 100%; font-size: 16px; letter-spacing: 4px; color: #888; font-weight: 700; }
+</style>
+</head>
+<body>
+<div class="marco">
+<div class="ciudad">IGUALADA</div>
+<div class="rotulo">HORA ACTUAL</div>
+<svg class="reloj" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+<circle cx="100" cy="100" r="94" fill="none" stroke="#e0a46a" stroke-width="6"/>
+<g id="marcas"></g>
+<line id="aguja-h" x1="100" y1="100" x2="100" y2="52" stroke="#fff" stroke-width="9" stroke-linecap="round"/>
+<line id="aguja-m" x1="100" y1="100" x2="100" y2="28" stroke="#fff" stroke-width="6" stroke-linecap="round"/>
+<line id="aguja-s" x1="100" y1="114" x2="100" y2="22" stroke="#e0a46a" stroke-width="3" stroke-linecap="round"/>
+<circle cx="100" cy="100" r="7" fill="#e0a46a"/>
+</svg>
+<div class="hora" id="hora">--<span class="dp">:</span>--</div>
+<div class="seg" id="seg"></div>
+<div class="dia" id="dia"></div>
+<div class="fecha" id="fecha"></div>
+<div class="marca">LASERCLINICS · IGUALADA</div>
+</div>
+<script>
+var DIAS = ["Diumenge", "Dilluns", "Dimarts", "Dimecres", "Dijous", "Divendres", "Dissabte"];
+var MESOS = ["de gener", "de febrer", "de març", "d'abril", "de maig", "de juny", "de juliol", "d'agost", "de setembre", "d'octubre", "de novembre", "de desembre"];
+var g = document.getElementById("marcas"), s = "";
+for (var i = 0; i < 12; i++) {
+s += '<line x1="100" y1="12" x2="100" y2="' + (i % 3 === 0 ? 30 : 22) + '" stroke="#fff" stroke-width="' + (i % 3 === 0 ? 6 : 3) + '" stroke-linecap="round" transform="rotate(' + i * 30 + ' 100 100)"/>';
+}
+g.innerHTML = s;
+function ahoraMadrid() {
+try {
+var p = new Intl.DateTimeFormat("en-GB", { timeZone: "Europe/Madrid", year: "numeric", month: "numeric", day: "numeric", hour: "numeric", minute: "numeric", second: "numeric", hourCycle: "h23" }).formatToParts(new Date());
+var v = {};
+p.forEach(function (x) { v[x.type] = parseInt(x.value, 10); });
+return new Date(v.year, v.month - 1, v.day, v.hour, v.minute, v.second);
+} catch (e) { return new Date(); }
+}
+function dos(n) { return n < 10 ? "0" + n : "" + n; }
+function girar(id, grados) { document.getElementById(id).setAttribute("transform", "rotate(" + grados + " 100 100)"); }
+function actualizar() {
+var d = ahoraMadrid();
+var h = d.getHours(), m = d.getMinutes(), sg = d.getSeconds();
+document.getElementById("hora").innerHTML = dos(h) + '<span class="dp">:</span>' + dos(m);
+document.getElementById("seg").textContent = dos(sg) + " s";
+document.getElementById("dia").textContent = DIAS[d.getDay()];
+document.getElementById("fecha").textContent = d.getDate() + " " + MESOS[d.getMonth()];
+girar("aguja-h", (h % 12) * 30 + m * 0.5);
+girar("aguja-m", m * 6 + sg * 0.1);
+girar("aguja-s", sg * 6);
+}
+actualizar();
+setInterval(actualizar, 1000);
+</script>
+</body>
+</html>
